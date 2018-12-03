@@ -1,5 +1,8 @@
 
 # Graph Compare Panel
+_______________________________________
+
+[中文文档](README_zh.md)
 
 Webpack copy of [grafana-graph-panel](https://github.com/CorpGlory/grafana-graph-panel) implementing https://github.com/grafana/grafana/issues/2093
 
@@ -8,6 +11,7 @@ This plugin is built as a panel plugin that combines and contrasts different tim
 Time shift supports the following units: s (seconds), m (minutes), h (hours), d (days), w (weeks), M (months), y (years)
 
 Works only on Grafana versions >= V5.0.1
+
 
 # Screenshots
 

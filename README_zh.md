@@ -1,5 +1,7 @@
 
 # Graph Compare Panel
+_______________________________________
+[Engilsh](README.md)
 
 基于[grafana-graph-panel](https://github.com/CorpGlory/grafana-graph-panel) 实现，主要解决问题： https://github.com/grafana/grafana/issues/2093
 
