@@ -1,0 +1,29 @@
+<div class="gf-form-group">
+
+	<div class="gf-form" ng-repeat="timeShift in ctrl.panel.timeShifts">
+		<span class="gf-form-label">
+			<i class="fa fa-clock-o"></i>
+		</span>
+		<span class="gf-form-label width-12">Time shift</span>
+		<span class="gf-form-label width-6">Amount</span>
+
+		<input type="text" class="gf-form-input max-width-8" placeholder="1h"
+			   empty-to-null ng-model="timeShift.value" valid-time-span
+			   ng-change="ctrl.refreshTimeShifts()" ng-model-onblur></input>
+
+		<span class="gf-form-label width-6">Suffix alias</span>
+		<input type="text" class="gf-form-input max-width-8" placeholder="auto"
+			   empty-to-null ng-model="timeShift.alias"
+			   ng-change="ctrl.refreshTimeShifts()" ng-model-onblur></input>
+		<label class="gf-form-label">
+			<a class="pointer" tabindex="1" ng-click="ctrl.removeTimeShift(timeShift)">
+				<i class="fa fa-trash"></i>
+			</a>
+		</label>
+	</div>
+	<button class="btn btn-secondary gf-form-btn" ng-click="ctrl.addTimeShifts()" >
+		Add time shift
+	</button>
+</div>
+
+
