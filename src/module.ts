@@ -1,36 +1,36 @@
+import './graph'
+import './legend'
+import './series_overrides_ctrl'
+import './thresholds_form'
 
-import './graph';
-import './legend';
-import './series_overrides_ctrl';
-import './thresholds_form';
-
-import template from './template';
-import _ from 'lodash';
-import config from 'grafana/app/core/config';
-import { MetricsPanelCtrl, alertTab } from 'grafana/app/plugins/sdk';
-import { DataProcessor } from './data_processor';
-import { axesEditorComponent } from './axes_editor';
-import * as timeShiftUtil from './time_shift_util';
+import template from './template'
+import _ from 'lodash'
+import config from 'grafana/app/core/config'
+import { MetricsPanelCtrl, alertTab } from 'grafana/app/plugins/sdk'
+import { DataProcessor } from './data_processor'
+import { axesEditorComponent } from './axes_editor'
+import * as timeShiftUtil from './time_shift_util'
 
 class GraphCtrl extends MetricsPanelCtrl {
-  static template = template;
-  
-  hiddenSeries: any = {};
-  seriesList: any = [];
-  dataList: any = [];
-  annotations: any = [];
-  alertState: any;
+  static template = template
 
-  _panelPath: any;
+  hiddenSeries: any = {}
+  seriesList: any = []
+  dataList: any = []
+  annotations: any = []
+  alertState: any
 
-  annotationsPromise: any;
-  dataWarning: any;
-  colors: any = [];
-  subTabIndex: number;
-  processor: DataProcessor;
-  timeShifts_sort: number;
-  querying: boolean;
-  queryTimeShifts:any =[];
+  _panelPath: any
+
+  annotationsPromise: any
+  dataWarning: any
+  colors: any = []
+  subTabIndex: number
+  processor: DataProcessor
+  timeShifts_sort: number
+  range_bak: any
+  queryTimeShifts: any = []
+  openLog: false
   panelDefaults = {
     // datasource name, null = default datasource
     datasource: null,
@@ -43,7 +43,7 @@ class GraphCtrl extends MetricsPanelCtrl {
         logBase: 1,
         min: null,
         max: null,
-        format: 'short',
+        format: 'short'
       },
       {
         label: null,
@@ -51,15 +51,15 @@ class GraphCtrl extends MetricsPanelCtrl {
         logBase: 1,
         min: null,
         max: null,
-        format: 'short',
-      },
+        format: 'short'
+      }
     ],
     xaxis: {
       show: true,
       mode: 'time',
       name: null,
       values: [],
-      buckets: null,
+      buckets: null
     },
     // show/hide lines
     lines: true,
@@ -91,7 +91,7 @@ class GraphCtrl extends MetricsPanelCtrl {
       max: false,
       current: false,
       total: false,
-      avg: false,
+      avg: false
     },
     // how null points should be handled
     nullPointMode: 'null',
@@ -101,7 +101,7 @@ class GraphCtrl extends MetricsPanelCtrl {
     tooltip: {
       value_type: 'individual',
       shared: true,
-      sort: 0,
+      sort: 0
     },
     // time overrides
     timeFrom: null,
@@ -113,347 +113,385 @@ class GraphCtrl extends MetricsPanelCtrl {
     // other style overrides
     seriesOverrides: [],
     thresholds: [],
-    timeShifts: [],
-    openLog:false,
-  };
+    timeShifts: []
+  }
 
   /** @ngInject */
   constructor($scope, $injector, private annotationsSrv) {
-    super($scope, $injector);
+    super($scope, $injector)
 
-    _.defaults(this.panel, this.panelDefaults);
-    _.defaults(this.panel.tooltip, this.panelDefaults.tooltip);
-    _.defaults(this.panel.legend, this.panelDefaults.legend);
-    _.defaults(this.panel.xaxis, this.panelDefaults.xaxis);
+    _.defaults(this.panel, this.panelDefaults)
+    _.defaults(this.panel.tooltip, this.panelDefaults.tooltip)
+    _.defaults(this.panel.legend, this.panelDefaults.legend)
+    _.defaults(this.panel.xaxis, this.panelDefaults.xaxis)
 
-    this.processor = new DataProcessor(this.panel);
+    this.processor = new DataProcessor(this.panel)
 
-    this.events.on('render', this.onRender.bind(this));
-    this.events.on('data-received', this.onDataReceived.bind(this));
-    this.events.on('data-error', this.onDataError.bind(this));
-    this.events.on('data-snapshot-load', this.onDataSnapshotLoad.bind(this));
-    this.events.on('init-edit-mode', this.onInitEditMode.bind(this));
-    this.events.on('init-panel-actions', this.onInitPanelActions.bind(this));
+    this.events.on('render', this.onRender.bind(this))
+    this.events.on('data-received', this.onDataReceived.bind(this))
+    this.events.on('data-error', this.onDataError.bind(this))
+    this.events.on('data-snapshot-load', this.onDataSnapshotLoad.bind(this))
+    this.events.on('init-edit-mode', this.onInitEditMode.bind(this))
+    this.events.on('init-panel-actions', this.onInitPanelActions.bind(this))
   }
 
   onInitEditMode() {
-    var partialPath = this.panelPath + 'partials';
-    this.addEditorTab('Axes', axesEditorComponent, 2);
-    this.addEditorTab('Legend', `${partialPath}/tab_legend.html`, 3);
-    this.addEditorTab('Display', `${partialPath}/tab_display.html`, 4);
-    this.addEditorTab('CompareTime', `${partialPath}/tab_compare_time.html`, 5);
+    var partialPath = this.panelPath + 'partials'
+    this.addEditorTab('Axes', axesEditorComponent, 2)
+    this.addEditorTab('Legend', `${partialPath}/tab_legend.html`, 3)
+    this.addEditorTab('Display', `${partialPath}/tab_display.html`, 4)
+    this.addEditorTab('CompareTime', `${partialPath}/tab_compare_time.html`, 5)
     if (config.alertingEnabled) {
-      this.addEditorTab('Alert', alertTab, 6);
+      this.addEditorTab('Alert', alertTab, 6)
     }
-    this.log("editorTabs+++++++++++panel.editorTabs:"+JSON.stringify(this.editorTabs)+"+++");
-    let timeRangeIndex=-1;
-    for(let index=0; index<this.editorTabs.length; index++){
-      let tab = this.editorTabs[index];
-      if(typeof tab  != 'undefined' && tab.title == "Time range"){
-        timeRangeIndex=index;
-        break;
+    this.log(
+      'editorTabs+++++++++++panel.editorTabs:' +
+        JSON.stringify(this.editorTabs) +
+        '+++'
+    )
+    let timeRangeIndex = -1
+    for (let index = 0; index < this.editorTabs.length; index++) {
+      let tab = this.editorTabs[index]
+      if (typeof tab != 'undefined' && tab.title == 'Time range') {
+        timeRangeIndex = index
+        break
       }
     }
-    if(timeRangeIndex>-1){
-      this.editorTabs.splice(timeRangeIndex, 1);;
+    if (timeRangeIndex > -1) {
+      this.editorTabs.splice(timeRangeIndex, 1)
     }
-    this.subTabIndex = 0;
+    this.subTabIndex = 0
   }
 
   onInitPanelActions(actions) {
-    actions.push({ text: 'Export CSV', click: 'ctrl.exportCsv()' });
-    actions.push({ text: 'Toggle legend', click: 'ctrl.toggleLegend()' });
+    actions.push({ text: 'Export CSV', click: 'ctrl.exportCsv()' })
+    actions.push({ text: 'Toggle legend', click: 'ctrl.toggleLegend()' })
   }
 
   issueQueries(datasource) {
     this.annotationsPromise = this.annotationsSrv.getAnnotations({
       dashboard: this.dashboard,
       panel: this.panel,
-      range: this.range,
-    });
-    return super.issueQueries(datasource);
+      range: this.range
+    })
+    return super.issueQueries(datasource)
   }
 
   zoomOut(evt) {
-    this.publishAppEvent('zoom-out', 2);
+    this.publishAppEvent('zoom-out', 2)
   }
 
   onDataSnapshotLoad(snapshotData) {
     this.annotationsPromise = this.annotationsSrv.getAnnotations({
       dashboard: this.dashboard,
       panel: this.panel,
-      range: this.range,
-    });
-    this.onDataReceived(snapshotData);
+      range: this.range
+    })
+    this.onDataReceived(snapshotData)
   }
 
   onDataError(err) {
-    this.querying=false;
-    this.seriesList = [];
-    this.annotations = [];
-    this.render([]);
+    this.timeShifts_sort = 0
+    this.seriesList = []
+    this.annotations = []
+    this.render([])
   }
 
-  refresh() {
-    if(this.querying){
-      return;
+  emitTimeShiftRefresh() {
+    if (this.panel.timeShifts.length < this.timeShifts_sort) {
+      return
     }
-    this.panel.timeShift="";
-    this.panel.hideTimeOverride=true;
-    this.log("+++++++++++++ssssssss+++++++++++++");
-    this.timeShifts_sort=0;
-    this.emitTimeShiftRefresh();
+    let timeShift = this.panel.timeShifts[this.timeShifts_sort - 1]
+    if (
+      typeof timeShift !== 'undefined' &&
+      typeof timeShift.value !== 'undefined' &&
+      timeShift.value != null &&
+      timeShift.value != ''
+    ) {
+      this.log(
+        'emitRefresh+++++++++++timeShift:' +
+          JSON.stringify(timeShift) +
+          '++timeShifts_sort:' +
+          this.timeShifts_sort +
+          '++++++++timeShift.value:' +
+          timeShift.value
+      )
+      this.panel.timeShift = timeShift.value
+    } else {
+      this.timeShifts_sort++
+      this.emitTimeShiftRefresh()
+      return
+    }
+    this.events.emit('refresh')
   }
-  emitTimeShiftRefresh(){
-    if(this.panel.timeShifts.length<this.timeShifts_sort){
-      this.onDataReceived([]);
-      return;
+  gennerDataListTimeShift(dataList, timeShift) {
+    if (
+      dataList.length == 0 ||
+      dataList[0].type ||
+      dataList[0].type == 'table' ||
+      typeof timeShift == 'undefined' ||
+      typeof timeShift.value == 'undefined' ||
+      timeShift.value == null ||
+      timeShift.value == ''
+    ) {
+      return dataList
     }
-    let timeShift=this.panel.timeShifts[this.timeShifts_sort];
-    if(typeof timeShift !== 'undefined' && typeof timeShift.value !== 'undefined' && timeShift.value != null && timeShift.value != ""){
-      this.log("emitRefresh+++++++++++timeShift:"+JSON.stringify(timeShift)+"++timeShifts_sort:"+this.timeShifts_sort+"++++++++timeShift.value:"+timeShift.value);
-      this.panel.timeShift=timeShift.value;
-    }else if(this.panel.timeShifts.length==this.timeShifts_sort) {
-      this.panel.timeShift="";
-    }else{
-      this.timeShifts_sort++;
-      this.emitTimeShiftRefresh();
-      return;
-    }
-    this.log("emitRefresh+++++++++++panel.timeShift:"+JSON.stringify(this.panel.timeShift)+"+++");
-    this.events.emit('refresh', null);
-  }
-  gennerDataListTimeShift(dataList,timeShift){
-    if(dataList.length == 0 || dataList[0].type || dataList[0].type=="table"
-        || typeof timeShift == 'undefined'
-        || typeof timeShift.value == 'undefined' || timeShift.value == null || timeShift.value == "" ){
-      return dataList;
-    }
-    this.log("gennerDataListTimeShift+from"+JSON.stringify(this.range.from));
+    this.log('gennerDataListTimeShift+from' + JSON.stringify(this.range.from))
     //let timeShift_ms = timeShiftUtil.parseShiftToMs(timeShift.value);
-    let timeShift_ms = timeShiftUtil.parseShiftToMs(this.range.from,timeShift.value);
-    
-    if(typeof timeShift_ms == 'undefined'){
-      return [];
+    let timeShift_ms = timeShiftUtil.parseShiftToMs(
+      this.range.from,
+      timeShift.value
+    )
+
+    if (typeof timeShift_ms == 'undefined') {
+      return []
     }
-    this.log("gennerDataListTimeShift: timeShift="+JSON.stringify(timeShift) +"======;timeShift_ms="+ timeShift_ms);
+    this.log(
+      'gennerDataListTimeShift: timeShift=' +
+        JSON.stringify(timeShift) +
+        '======;timeShift_ms=' +
+        timeShift_ms
+    )
     for (let line of dataList) {
-      if(typeof timeShift.alias == 'undefined' ||  timeShift.alias == null || timeShift.alias == ""){
-        line.target=line.target+"_"+timeShift.value;
-      }else{
-        line.target=line.target+"_"+timeShift.alias;
+      if (
+        typeof timeShift.alias == 'undefined' ||
+        timeShift.alias == null ||
+        timeShift.alias == ''
+      ) {
+        line.target = line.target + '_' + timeShift.value
+      } else {
+        line.target = line.target + '_' + timeShift.alias
       }
       for (let point of line.datapoints) {
-        point[1]=point[1]+timeShift_ms;
+        point[1] = point[1] + timeShift_ms
       }
     }
-    return dataList;
+    return dataList
   }
   onDataReceived(dataList) {
-    dataList=this.gennerDataListTimeShift(dataList,this.panel.timeShifts[this.timeShifts_sort]);
-    if(!this.querying){//初始化datalist
-      this.querying=true;
-      this.dataList = dataList;
-    }else{
-      this.dataList.push(...dataList);
+    this.log(
+      'this.timeShifts_sort :' +
+        this.timeShifts_sort +
+        ',this.panel.timeShifts.length:' +
+        this.panel.timeShifts.length
+    )
+    if (
+      this.timeShifts_sort == 0 ||
+      typeof this.timeShifts_sort == 'undefined'
+    ) {
+      this.timeShifts_sort = 0
+      this.dataList = dataList
+      this.range_bak = this.range
+      this.log('+++++++++++++ssssssss+++++++++++++')
+    } else {
+      dataList = this.gennerDataListTimeShift(
+        dataList,
+        this.panel.timeShifts[this.timeShifts_sort - 1]
+      )
+      this.dataList.push(...dataList)
     }
-    if(this.panel.timeShifts.length>this.timeShifts_sort){
-      this.timeShifts_sort++;
-      this.emitTimeShiftRefresh();
-      return;
+
+    if (this.panel.timeShifts.length > this.timeShifts_sort) {
+      this.timeShifts_sort++
+      this.emitTimeShiftRefresh()
+      return
     }
-    this.panel.timeShift="";
-    this.querying=false;
-    this.log("final:"+JSON.stringify(this.dataList));
-    dataList=this.dataList;
+    this.range = this.range_bak
+    this.panel.timeShift = ''
+    this.panel.hideTimeOverride = true
+    this.timeShifts_sort = 0
+    this.log('final:' + JSON.stringify(this.dataList))
+    dataList = this.dataList
     this.seriesList = this.processor.getSeriesList({
       dataList: dataList,
-      range: this.range,
-    });
+      range: this.range
+    })
 
-    this.dataWarning = null;
+    this.dataWarning = null
     const datapointsCount = this.seriesList.reduce((prev, series) => {
-      return prev + series.datapoints.length;
-    }, 0);
+      return prev + series.datapoints.length
+    }, 0)
 
     if (datapointsCount === 0) {
       this.dataWarning = {
         title: 'No data points',
-        tip: 'No datapoints returned from data query',
-      };
+        tip: 'No datapoints returned from data query'
+      }
     } else {
       for (let series of this.seriesList) {
         if (series.isOutsideRange) {
           this.dataWarning = {
             title: 'Data points outside time range',
-            tip: 'Can be caused by timezone mismatch or missing time filter in query',
-          };
-          break;
+            tip:
+              'Can be caused by timezone mismatch or missing time filter in query'
+          }
+          break
         }
       }
     }
 
     this.annotationsPromise.then(
       result => {
-        this.loading = false;
-        this.alertState = result.alertState;
-        this.annotations = result.annotations;
-        this.render(this.seriesList);
+        this.loading = false
+        this.alertState = result.alertState
+        this.annotations = result.annotations
+        this.render(this.seriesList)
       },
       () => {
-        this.loading = false;
-        this.render(this.seriesList);
+        this.loading = false
+        this.render(this.seriesList)
       }
-    );
-    this.log("++++++++++++++eeeeeeee++++++++++++");
+    )
+    this.log('++++++++++++++eeeeeeee++++++++++++')
   }
 
   onRender() {
     if (!this.seriesList) {
-      return;
+      return
     }
 
     for (let series of this.seriesList) {
-      series.applySeriesOverrides(this.panel.seriesOverrides);
+      series.applySeriesOverrides(this.panel.seriesOverrides)
 
       if (series.unit) {
-        this.panel.yaxes[series.yaxis - 1].format = series.unit;
+        this.panel.yaxes[series.yaxis - 1].format = series.unit
       }
     }
   }
 
   changeSeriesColor(series, color) {
-    series.color = color;
-    this.panel.aliasColors[series.alias] = series.color;
-    this.render();
+    series.color = color
+    this.panel.aliasColors[series.alias] = series.color
+    this.render()
   }
 
   toggleSeries(serie, event) {
     if (event.ctrlKey || event.metaKey || event.shiftKey) {
       if (this.hiddenSeries[serie.alias]) {
-        delete this.hiddenSeries[serie.alias];
+        delete this.hiddenSeries[serie.alias]
       } else {
-        this.hiddenSeries[serie.alias] = true;
+        this.hiddenSeries[serie.alias] = true
       }
     } else {
-      this.toggleSeriesExclusiveMode(serie);
+      this.toggleSeriesExclusiveMode(serie)
     }
-    this.render();
+    this.render()
   }
 
   toggleSeriesExclusiveMode(serie) {
-    var hidden = this.hiddenSeries;
+    var hidden = this.hiddenSeries
 
     if (hidden[serie.alias]) {
-      delete hidden[serie.alias];
+      delete hidden[serie.alias]
     }
 
     // check if every other series is hidden
     var alreadyExclusive = _.every(this.seriesList, value => {
       if (value.alias === serie.alias) {
-        return true;
+        return true
       }
 
-      return hidden[value.alias];
-    });
+      return hidden[value.alias]
+    })
 
     if (alreadyExclusive) {
       // remove all hidden series
       _.each(this.seriesList, value => {
-        delete this.hiddenSeries[value.alias];
-      });
+        delete this.hiddenSeries[value.alias]
+      })
     } else {
       // hide all but this serie
       _.each(this.seriesList, value => {
         if (value.alias === serie.alias) {
-          return;
+          return
         }
 
-        this.hiddenSeries[value.alias] = true;
-      });
+        this.hiddenSeries[value.alias] = true
+      })
     }
   }
 
   toggleAxis(info) {
-    var override = _.find(this.panel.seriesOverrides, { alias: info.alias });
+    var override = _.find(this.panel.seriesOverrides, { alias: info.alias })
     if (!override) {
-      override = { alias: info.alias };
-      this.panel.seriesOverrides.push(override);
+      override = { alias: info.alias }
+      this.panel.seriesOverrides.push(override)
     }
-    info.yaxis = override.yaxis = info.yaxis === 2 ? 1 : 2;
-    this.render();
+    info.yaxis = override.yaxis = info.yaxis === 2 ? 1 : 2
+    this.render()
   }
 
   addSeriesOverride(override) {
-    this.panel.seriesOverrides.push(override || {});
+    this.panel.seriesOverrides.push(override || {})
   }
 
   removeSeriesOverride(override) {
-    this.panel.seriesOverrides = _.without(this.panel.seriesOverrides, override);
-    this.render();
+    this.panel.seriesOverrides = _.without(this.panel.seriesOverrides, override)
+    this.render()
   }
 
   toggleLegend() {
-    this.panel.legend.show = !this.panel.legend.show;
-    this.refresh();
+    this.panel.legend.show = !this.panel.legend.show
+    this.refresh()
   }
 
   legendValuesOptionChanged() {
-    var legend = this.panel.legend;
-    legend.values = legend.min || legend.max || legend.avg || legend.current || legend.total;
-    this.render();
+    var legend = this.panel.legend
+    legend.values =
+      legend.min || legend.max || legend.avg || legend.current || legend.total
+    this.render()
   }
 
   exportCsv() {
-    var scope = this.$scope.$new(true);
-    scope.seriesList = this.seriesList;
+    var scope = this.$scope.$new(true)
+    scope.seriesList = this.seriesList
     this.publishAppEvent('show-modal', {
       templateHtml: '<export-data-modal data="seriesList"></export-data-modal>',
       scope,
-      modalClass: 'modal--narrow',
-    });
+      modalClass: 'modal--narrow'
+    })
   }
 
-  addTimeShifts(){
-    let id=this.getTimeShiftId();
-    this.log("addTimeShifts++++++++++id:"+id);
-    this.panel.timeShifts.push({id:id});
+  addTimeShifts() {
+    let id = this.getTimeShiftId()
+    this.log('addTimeShifts++++++++++id:' + id)
+    this.panel.timeShifts.push({ id: id })
   }
-  removeTimeShift(timeShift){
-    this.log("removeTimeShift++++++++++:"+JSON.stringify(timeShift));
-    var index = _.indexOf(this.panel.timeShifts, timeShift);
-    this.log("removeTimeShift++++++++++index:"+index);
-    this.panel.timeShifts.splice(index, 1);
-    this.refreshTimeShifts();
+  removeTimeShift(timeShift) {
+    this.log('removeTimeShift++++++++++:' + JSON.stringify(timeShift))
+    var index = _.indexOf(this.panel.timeShifts, timeShift)
+    this.log('removeTimeShift++++++++++index:' + index)
+    this.panel.timeShifts.splice(index, 1)
+    this.refreshTimeShifts()
   }
-  refreshTimeShifts(){
-    this.log("refreshTimeShifts:"+JSON.stringify(this.panel.timeShifts));
-    this.refresh();
+  refreshTimeShifts() {
+    this.log('refreshTimeShifts:' + JSON.stringify(this.panel.timeShifts))
+    this.refresh()
   }
-  getTimeShiftId(){
-    let id=0;
-    while(true) {
-      let notExits=_.every(this.panel.timeShifts, function(timeShift) {
-        return timeShift.id !== id;
-      });
-      if(notExits){
-        return id;
-      }else{
-        id++;
+  getTimeShiftId() {
+    let id = 0
+    while (true) {
+      let notExits = _.every(this.panel.timeShifts, function(timeShift) {
+        return timeShift.id !== id
+      })
+      if (notExits) {
+        return id
+      } else {
+        id++
       }
     }
   }
   get panelPath() {
     if (this._panelPath === undefined) {
-      this._panelPath = 'public/plugins/' + this.pluginId + '/';
+      this._panelPath = 'public/plugins/' + this.pluginId + '/'
     }
-    return this._panelPath;
+    return this._panelPath
   }
-  log(msg){
-    if(this.panel.openLog){
-      console.log(msg);
+  log(msg) {
+    if (this.openLog) {
+      console.log(msg)
     }
   }
 }
 
-export { GraphCtrl, GraphCtrl as PanelCtrl };
+export { GraphCtrl, GraphCtrl as PanelCtrl }

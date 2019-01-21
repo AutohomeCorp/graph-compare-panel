@@ -1941,7 +1941,7 @@ var GraphCtrl = /** @class */ (function (_super) {
                     logBase: 1,
                     min: null,
                     max: null,
-                    format: 'short',
+                    format: 'short'
                 },
                 {
                     label: null,
@@ -1949,15 +1949,15 @@ var GraphCtrl = /** @class */ (function (_super) {
                     logBase: 1,
                     min: null,
                     max: null,
-                    format: 'short',
-                },
+                    format: 'short'
+                }
             ],
             xaxis: {
                 show: true,
                 mode: 'time',
                 name: null,
                 values: [],
-                buckets: null,
+                buckets: null
             },
             // show/hide lines
             lines: true,
@@ -1989,7 +1989,7 @@ var GraphCtrl = /** @class */ (function (_super) {
                 max: false,
                 current: false,
                 total: false,
-                avg: false,
+                avg: false
             },
             // how null points should be handled
             nullPointMode: 'null',
@@ -1999,7 +1999,7 @@ var GraphCtrl = /** @class */ (function (_super) {
             tooltip: {
                 value_type: 'individual',
                 shared: true,
-                sort: 0,
+                sort: 0
             },
             // time overrides
             timeFrom: null,
@@ -2011,8 +2011,7 @@ var GraphCtrl = /** @class */ (function (_super) {
             // other style overrides
             seriesOverrides: [],
             thresholds: [],
-            timeShifts: [],
-            openLog: false,
+            timeShifts: []
         };
         __WEBPACK_IMPORTED_MODULE_5_lodash___default.a.defaults(_this.panel, _this.panelDefaults);
         __WEBPACK_IMPORTED_MODULE_5_lodash___default.a.defaults(_this.panel.tooltip, _this.panelDefaults.tooltip);
@@ -2036,18 +2035,19 @@ var GraphCtrl = /** @class */ (function (_super) {
         if (__WEBPACK_IMPORTED_MODULE_6_grafana_app_core_config___default.a.alertingEnabled) {
             this.addEditorTab('Alert', __WEBPACK_IMPORTED_MODULE_7_grafana_app_plugins_sdk__["alertTab"], 6);
         }
-        this.log("editorTabs+++++++++++panel.editorTabs:" + JSON.stringify(this.editorTabs) + "+++");
+        this.log('editorTabs+++++++++++panel.editorTabs:' +
+            JSON.stringify(this.editorTabs) +
+            '+++');
         var timeRangeIndex = -1;
         for (var index = 0; index < this.editorTabs.length; index++) {
             var tab = this.editorTabs[index];
-            if (typeof tab != 'undefined' && tab.title == "Time range") {
+            if (typeof tab != 'undefined' && tab.title == 'Time range') {
                 timeRangeIndex = index;
                 break;
             }
         }
         if (timeRangeIndex > -1) {
             this.editorTabs.splice(timeRangeIndex, 1);
-            ;
         }
         this.subTabIndex = 0;
     };
@@ -2059,7 +2059,7 @@ var GraphCtrl = /** @class */ (function (_super) {
         this.annotationsPromise = this.annotationsSrv.getAnnotations({
             dashboard: this.dashboard,
             panel: this.panel,
-            range: this.range,
+            range: this.range
         });
         return _super.prototype.issueQueries.call(this, datasource);
     };
@@ -2070,67 +2070,69 @@ var GraphCtrl = /** @class */ (function (_super) {
         this.annotationsPromise = this.annotationsSrv.getAnnotations({
             dashboard: this.dashboard,
             panel: this.panel,
-            range: this.range,
+            range: this.range
         });
         this.onDataReceived(snapshotData);
     };
     GraphCtrl.prototype.onDataError = function (err) {
-        this.querying = false;
+        this.timeShifts_sort = 0;
         this.seriesList = [];
         this.annotations = [];
         this.render([]);
     };
-    GraphCtrl.prototype.refresh = function () {
-        if (this.querying) {
-            return;
-        }
-        this.panel.timeShift = "";
-        this.panel.hideTimeOverride = true;
-        this.log("+++++++++++++ssssssss+++++++++++++");
-        this.timeShifts_sort = 0;
-        this.emitTimeShiftRefresh();
-    };
     GraphCtrl.prototype.emitTimeShiftRefresh = function () {
         if (this.panel.timeShifts.length < this.timeShifts_sort) {
-            this.onDataReceived([]);
             return;
         }
-        var timeShift = this.panel.timeShifts[this.timeShifts_sort];
-        if (typeof timeShift !== 'undefined' && typeof timeShift.value !== 'undefined' && timeShift.value != null && timeShift.value != "") {
-            this.log("emitRefresh+++++++++++timeShift:" + JSON.stringify(timeShift) + "++timeShifts_sort:" + this.timeShifts_sort + "++++++++timeShift.value:" + timeShift.value);
+        var timeShift = this.panel.timeShifts[this.timeShifts_sort - 1];
+        if (typeof timeShift !== 'undefined' &&
+            typeof timeShift.value !== 'undefined' &&
+            timeShift.value != null &&
+            timeShift.value != '') {
+            this.log('emitRefresh+++++++++++timeShift:' +
+                JSON.stringify(timeShift) +
+                '++timeShifts_sort:' +
+                this.timeShifts_sort +
+                '++++++++timeShift.value:' +
+                timeShift.value);
             this.panel.timeShift = timeShift.value;
-        }
-        else if (this.panel.timeShifts.length == this.timeShifts_sort) {
-            this.panel.timeShift = "";
         }
         else {
             this.timeShifts_sort++;
             this.emitTimeShiftRefresh();
             return;
         }
-        this.log("emitRefresh+++++++++++panel.timeShift:" + JSON.stringify(this.panel.timeShift) + "+++");
-        this.events.emit('refresh', null);
+        this.events.emit('refresh');
     };
     GraphCtrl.prototype.gennerDataListTimeShift = function (dataList, timeShift) {
-        if (dataList.length == 0 || dataList[0].type || dataList[0].type == "table"
-            || typeof timeShift == 'undefined'
-            || typeof timeShift.value == 'undefined' || timeShift.value == null || timeShift.value == "") {
+        if (dataList.length == 0 ||
+            dataList[0].type ||
+            dataList[0].type == 'table' ||
+            typeof timeShift == 'undefined' ||
+            typeof timeShift.value == 'undefined' ||
+            timeShift.value == null ||
+            timeShift.value == '') {
             return dataList;
         }
-        this.log("gennerDataListTimeShift+from" + JSON.stringify(this.range.from));
+        this.log('gennerDataListTimeShift+from' + JSON.stringify(this.range.from));
         //let timeShift_ms = timeShiftUtil.parseShiftToMs(timeShift.value);
         var timeShift_ms = __WEBPACK_IMPORTED_MODULE_10__time_shift_util__["a" /* parseShiftToMs */](this.range.from, timeShift.value);
         if (typeof timeShift_ms == 'undefined') {
             return [];
         }
-        this.log("gennerDataListTimeShift: timeShift=" + JSON.stringify(timeShift) + "======;timeShift_ms=" + timeShift_ms);
+        this.log('gennerDataListTimeShift: timeShift=' +
+            JSON.stringify(timeShift) +
+            '======;timeShift_ms=' +
+            timeShift_ms);
         for (var _i = 0, dataList_1 = dataList; _i < dataList_1.length; _i++) {
             var line = dataList_1[_i];
-            if (typeof timeShift.alias == 'undefined' || timeShift.alias == null || timeShift.alias == "") {
-                line.target = line.target + "_" + timeShift.value;
+            if (typeof timeShift.alias == 'undefined' ||
+                timeShift.alias == null ||
+                timeShift.alias == '') {
+                line.target = line.target + '_' + timeShift.value;
             }
             else {
-                line.target = line.target + "_" + timeShift.alias;
+                line.target = line.target + '_' + timeShift.alias;
             }
             for (var _a = 0, _b = line.datapoints; _a < _b.length; _a++) {
                 var point = _b[_a];
@@ -2141,12 +2143,19 @@ var GraphCtrl = /** @class */ (function (_super) {
     };
     GraphCtrl.prototype.onDataReceived = function (dataList) {
         var _this = this;
-        dataList = this.gennerDataListTimeShift(dataList, this.panel.timeShifts[this.timeShifts_sort]);
-        if (!this.querying) {
-            this.querying = true;
+        this.log('this.timeShifts_sort :' +
+            this.timeShifts_sort +
+            ',this.panel.timeShifts.length:' +
+            this.panel.timeShifts.length);
+        if (this.timeShifts_sort == 0 ||
+            typeof this.timeShifts_sort == 'undefined') {
+            this.timeShifts_sort = 0;
             this.dataList = dataList;
+            this.range_bak = this.range;
+            this.log('+++++++++++++ssssssss+++++++++++++');
         }
         else {
+            dataList = this.gennerDataListTimeShift(dataList, this.panel.timeShifts[this.timeShifts_sort - 1]);
             (_a = this.dataList).push.apply(_a, dataList);
         }
         if (this.panel.timeShifts.length > this.timeShifts_sort) {
@@ -2154,13 +2163,15 @@ var GraphCtrl = /** @class */ (function (_super) {
             this.emitTimeShiftRefresh();
             return;
         }
-        this.panel.timeShift = "";
-        this.querying = false;
-        this.log("final:" + JSON.stringify(this.dataList));
+        this.range = this.range_bak;
+        this.panel.timeShift = '';
+        this.panel.hideTimeOverride = true;
+        this.timeShifts_sort = 0;
+        this.log('final:' + JSON.stringify(this.dataList));
         dataList = this.dataList;
         this.seriesList = this.processor.getSeriesList({
             dataList: dataList,
-            range: this.range,
+            range: this.range
         });
         this.dataWarning = null;
         var datapointsCount = this.seriesList.reduce(function (prev, series) {
@@ -2169,7 +2180,7 @@ var GraphCtrl = /** @class */ (function (_super) {
         if (datapointsCount === 0) {
             this.dataWarning = {
                 title: 'No data points',
-                tip: 'No datapoints returned from data query',
+                tip: 'No datapoints returned from data query'
             };
         }
         else {
@@ -2178,7 +2189,7 @@ var GraphCtrl = /** @class */ (function (_super) {
                 if (series.isOutsideRange) {
                     this.dataWarning = {
                         title: 'Data points outside time range',
-                        tip: 'Can be caused by timezone mismatch or missing time filter in query',
+                        tip: 'Can be caused by timezone mismatch or missing time filter in query'
                     };
                     break;
                 }
@@ -2193,7 +2204,7 @@ var GraphCtrl = /** @class */ (function (_super) {
             _this.loading = false;
             _this.render(_this.seriesList);
         });
-        this.log("++++++++++++++eeeeeeee++++++++++++");
+        this.log('++++++++++++++eeeeeeee++++++++++++');
         var _a;
     };
     GraphCtrl.prototype.onRender = function () {
@@ -2278,7 +2289,8 @@ var GraphCtrl = /** @class */ (function (_super) {
     };
     GraphCtrl.prototype.legendValuesOptionChanged = function () {
         var legend = this.panel.legend;
-        legend.values = legend.min || legend.max || legend.avg || legend.current || legend.total;
+        legend.values =
+            legend.min || legend.max || legend.avg || legend.current || legend.total;
         this.render();
     };
     GraphCtrl.prototype.exportCsv = function () {
@@ -2287,23 +2299,23 @@ var GraphCtrl = /** @class */ (function (_super) {
         this.publishAppEvent('show-modal', {
             templateHtml: '<export-data-modal data="seriesList"></export-data-modal>',
             scope: scope,
-            modalClass: 'modal--narrow',
+            modalClass: 'modal--narrow'
         });
     };
     GraphCtrl.prototype.addTimeShifts = function () {
         var id = this.getTimeShiftId();
-        this.log("addTimeShifts++++++++++id:" + id);
+        this.log('addTimeShifts++++++++++id:' + id);
         this.panel.timeShifts.push({ id: id });
     };
     GraphCtrl.prototype.removeTimeShift = function (timeShift) {
-        this.log("removeTimeShift++++++++++:" + JSON.stringify(timeShift));
+        this.log('removeTimeShift++++++++++:' + JSON.stringify(timeShift));
         var index = __WEBPACK_IMPORTED_MODULE_5_lodash___default.a.indexOf(this.panel.timeShifts, timeShift);
-        this.log("removeTimeShift++++++++++index:" + index);
+        this.log('removeTimeShift++++++++++index:' + index);
         this.panel.timeShifts.splice(index, 1);
         this.refreshTimeShifts();
     };
     GraphCtrl.prototype.refreshTimeShifts = function () {
-        this.log("refreshTimeShifts:" + JSON.stringify(this.panel.timeShifts));
+        this.log('refreshTimeShifts:' + JSON.stringify(this.panel.timeShifts));
         this.refresh();
     };
     GraphCtrl.prototype.getTimeShiftId = function () {
@@ -2331,7 +2343,7 @@ var GraphCtrl = /** @class */ (function (_super) {
         configurable: true
     });
     GraphCtrl.prototype.log = function (msg) {
-        if (this.panel.openLog) {
+        if (this.openLog) {
             console.log(msg);
         }
     };
