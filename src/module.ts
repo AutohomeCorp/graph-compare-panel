@@ -29,6 +29,7 @@ class GraphCtrl extends MetricsPanelCtrl {
   processor: DataProcessor
   timeShifts_sort: number
   range_bak: any
+  timeInfo_bak: any
   queryTimeShifts: any = []
   openLog: false
   panelDefaults = {
@@ -268,6 +269,32 @@ class GraphCtrl extends MetricsPanelCtrl {
     }
     return dataList
   }
+
+  needEmitTimeShift() {
+    this.log(
+      'this.timeShifts_sort :' +
+        this.timeShifts_sort +
+        ',this.panel.timeShifts.length:' +
+        this.panel.timeShifts.length
+    )
+    if (this.panel.timeShifts.length < this.timeShifts_sort) {
+      return false
+    }
+
+    this.timeShifts_sort++
+    let timeShift = this.panel.timeShifts[this.timeShifts_sort - 1]
+    if (
+      typeof timeShift !== 'undefined' &&
+      typeof timeShift.value !== 'undefined' &&
+      timeShift.value != null &&
+      timeShift.value != ''
+    ) {
+      return true
+    } else {
+      return this.needEmitTimeShift()
+    }
+  }
+
   onDataReceived(dataList) {
     this.log(
       'this.timeShifts_sort :' +
@@ -282,6 +309,7 @@ class GraphCtrl extends MetricsPanelCtrl {
       this.timeShifts_sort = 0
       this.dataList = dataList
       this.range_bak = this.range
+      this.timeInfo_bak = this.timeInfo
       this.log('+++++++++++++ssssssss+++++++++++++')
     } else {
       dataList = this.gennerDataListTimeShift(
@@ -291,15 +319,15 @@ class GraphCtrl extends MetricsPanelCtrl {
       this.dataList.push(...dataList)
     }
 
-    if (this.panel.timeShifts.length > this.timeShifts_sort) {
-      this.timeShifts_sort++
+    if (this.needEmitTimeShift()) {
       this.emitTimeShiftRefresh()
       return
     }
     this.range = this.range_bak
+    this.timeInfo = this.timeInfo_bak
     this.panel.timeShift = ''
-    this.panel.hideTimeOverride = true
     this.timeShifts_sort = 0
+
     this.log('final:' + JSON.stringify(this.dataList))
     dataList = this.dataList
     this.seriesList = this.processor.getSeriesList({
