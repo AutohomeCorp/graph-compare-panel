@@ -1,37 +1,36 @@
-
-import kbn from 'grafana/app/core/utils/kbn';
+import kbn from 'grafana/app/core/utils/kbn'
 
 export class AxesEditorCtrl {
-  panel: any;
-  panelCtrl: any;
-  unitFormats: any;
-  logScales: any;
-  xAxisModes: any;
-  xAxisStatOptions: any;
-  xNameSegment: any;
+  panel: any
+  panelCtrl: any
+  unitFormats: any
+  logScales: any
+  xAxisModes: any
+  xAxisStatOptions: any
+  xNameSegment: any
 
-  /** @ngInject **/
+  /** @ngInject */
   constructor(private $scope, private $q) {
-    this.panelCtrl = $scope.ctrl;
-    this.panel = this.panelCtrl.panel;
-    this.$scope.ctrl = this;
+    this.panelCtrl = $scope.ctrl
+    this.panel = this.panelCtrl.panel
+    this.$scope.ctrl = this
 
-    this.unitFormats = kbn.getUnitFormats();
+    this.unitFormats = kbn.getUnitFormats()
 
     this.logScales = {
       linear: 1,
       'log (base 2)': 2,
       'log (base 10)': 10,
       'log (base 32)': 32,
-      'log (base 1024)': 1024,
-    };
+      'log (base 1024)': 1024
+    }
 
     this.xAxisModes = {
       Time: 'time',
       Series: 'series',
-      Histogram: 'histogram',
+      Histogram: 'histogram'
       // 'Data field': 'field',
-    };
+    }
 
     this.xAxisStatOptions = [
       { text: 'Avg', value: 'avg' },
@@ -39,51 +38,55 @@ export class AxesEditorCtrl {
       { text: 'Max', value: 'max' },
       { text: 'Total', value: 'total' },
       { text: 'Count', value: 'count' },
-      { text: 'Current', value: 'current' },
-    ];
+      { text: 'Current', value: 'current' }
+    ]
 
     if (this.panel.xaxis.mode === 'custom') {
       if (!this.panel.xaxis.name) {
-        this.panel.xaxis.name = 'specify field';
+        this.panel.xaxis.name = 'specify field'
       }
     }
   }
 
   setUnitFormat(axis, subItem) {
-    axis.format = subItem.value;
-    this.panelCtrl.render();
+    axis.format = subItem.value
+    this.panelCtrl.render()
   }
 
   render() {
-    this.panelCtrl.render();
+    this.panelCtrl.render()
   }
 
   xAxisModeChanged() {
-    this.panelCtrl.processor.setPanelDefaultsForNewXAxisMode();
-    this.panelCtrl.onDataReceived(this.panelCtrl.dataList);
+    this.panelCtrl.processor.setPanelDefaultsForNewXAxisMode()
+    this.panelCtrl.onDataReceived(this.panelCtrl.dataList)
   }
 
   xAxisValueChanged() {
-    this.panelCtrl.onDataReceived(this.panelCtrl.dataList);
+    this.panelCtrl.onDataReceived(this.panelCtrl.dataList)
   }
 
   getDataFieldNames(onlyNumbers) {
-    var props = this.panelCtrl.processor.getDataFieldNames(this.panelCtrl.dataList, onlyNumbers);
-    var items = props.map(prop => {
-      return { text: prop, value: prop };
-    });
+    const props = this.panelCtrl.processor.getDataFieldNames(
+      this.panelCtrl.dataList,
+      onlyNumbers
+    )
+    const items = props.map(prop => {
+      return { text: prop, value: prop }
+    })
 
-    return this.$q.when(items);
+    return this.$q.when(items)
   }
 }
 
-/** @ngInject **/
+/** @ngInject */
 export function axesEditorComponent() {
-  'use strict';
+  'use strict'
   return {
     restrict: 'E',
     scope: true,
-    templateUrl: 'public/plugins/graph-compare-panel/partials/axes_editor.html',
-    controller: AxesEditorCtrl,
-  };
+    templateUrl:
+      'public/plugins/graph-compare-panel-for-grafana-5.4.x/axes_editor.html',
+    controller: AxesEditorCtrl
+  }
 }

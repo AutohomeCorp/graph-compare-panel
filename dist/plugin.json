@@ -1,8 +1,8 @@
 {
   "type": "panel",
-  "name": "Graph Compare Panel",
+  "name": "Graph Compare Panel for grafana 5.4.x",
 
-  "id": "graph-compare-panel",
+  "id": "graph-compare-panel-for-grafana-5.4.x",
 
   "info": {
     "author": {
@@ -15,7 +15,6 @@
     }
   },
   "dependencies": {
-    "grafanaVersion": "4.6.x"
+    "grafanaVersion": "5.4.x"
   }
 }
-

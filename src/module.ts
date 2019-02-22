@@ -1,7 +1,7 @@
 import './graph'
-import './legend'
 import './series_overrides_ctrl'
 import './thresholds_form'
+import './time_regions_form'
 
 import template from './template'
 import _ from 'lodash'
@@ -10,18 +10,16 @@ import { MetricsPanelCtrl, alertTab } from 'grafana/app/plugins/sdk'
 import { DataProcessor } from './data_processor'
 import { axesEditorComponent } from './axes_editor'
 import * as timeShiftUtil from './time_shift_util'
-
 class GraphCtrl extends MetricsPanelCtrl {
   static template = template
 
+  renderError: boolean
   hiddenSeries: any = {}
   seriesList: any = []
   dataList: any = []
   annotations: any = []
   alertState: any
-
   _panelPath: any
-
   annotationsPromise: any
   dataWarning: any
   colors: any = []
@@ -31,7 +29,6 @@ class GraphCtrl extends MetricsPanelCtrl {
   range_bak: any
   timeInfo_bak: any
   queryTimeShifts: any = []
-  openLog: false
   panelDefaults = {
     // datasource name, null = default datasource
     datasource: null,
@@ -61,6 +58,10 @@ class GraphCtrl extends MetricsPanelCtrl {
       name: null,
       values: [],
       buckets: null
+    },
+    yaxis: {
+      align: false,
+      alignLevel: null
     },
     // show/hide lines
     lines: true,
@@ -114,6 +115,7 @@ class GraphCtrl extends MetricsPanelCtrl {
     // other style overrides
     seriesOverrides: [],
     thresholds: [],
+    timeRegions: [],
     timeShifts: []
   }
 
@@ -137,7 +139,7 @@ class GraphCtrl extends MetricsPanelCtrl {
   }
 
   onInitEditMode() {
-    var partialPath = this.panelPath + 'partials'
+    var partialPath = this.panelPath
     this.addEditorTab('Axes', axesEditorComponent, 2)
     this.addEditorTab('Legend', `${partialPath}/tab_legend.html`, 3)
     this.addEditorTab('Display', `${partialPath}/tab_display.html`, 4)
@@ -166,7 +168,11 @@ class GraphCtrl extends MetricsPanelCtrl {
 
   onInitPanelActions(actions) {
     actions.push({ text: 'Export CSV', click: 'ctrl.exportCsv()' })
-    actions.push({ text: 'Toggle legend', click: 'ctrl.toggleLegend()' })
+    actions.push({
+      text: 'Toggle legend',
+      click: 'ctrl.toggleLegend()',
+      shortcut: 'p l'
+    })
   }
 
   issueQueries(datasource) {
@@ -175,7 +181,16 @@ class GraphCtrl extends MetricsPanelCtrl {
       panel: this.panel,
       range: this.range
     })
-    return super.issueQueries(datasource)
+
+    /* Wait for annotationSrv requests to get datasources to
+     * resolve before issuing queries. This allows the annotations
+     * service to fire annotations queries before graph queries
+     * (but not wait for completion). This resolves
+     * issue 11806.
+     */
+    return this.annotationsSrv.datasourcePromises.then(r => {
+      return super.issueQueries(datasource)
+    })
   }
 
   zoomOut(evt) {
@@ -197,7 +212,6 @@ class GraphCtrl extends MetricsPanelCtrl {
     this.annotations = []
     this.render([])
   }
-
   emitTimeShiftRefresh() {
     let timeShift = this.panel.timeShifts[this.timeShifts_sort - 1]
     this.log(
@@ -256,7 +270,6 @@ class GraphCtrl extends MetricsPanelCtrl {
     }
     return dataList
   }
-
   needEmitTimeShift() {
     this.log(
       'this.timeShifts_sort :' +
@@ -281,7 +294,6 @@ class GraphCtrl extends MetricsPanelCtrl {
       return this.needEmitTimeShift()
     }
   }
-
   onDataReceived(dataList) {
     this.log(
       'this.timeShifts_sort :' +
@@ -314,8 +326,8 @@ class GraphCtrl extends MetricsPanelCtrl {
     this.timeInfo = this.timeInfo_bak
     this.panel.timeShift = ''
     this.timeShifts_sort = 0
-
-    this.log('final:' + JSON.stringify(this.dataList))
+    //this.log('final:' + JSON.stringify(this.dataList))
+    this.log('final')
     dataList = this.dataList
     this.seriesList = this.processor.getSeriesList({
       dataList: dataList,
@@ -333,7 +345,7 @@ class GraphCtrl extends MetricsPanelCtrl {
         tip: 'No datapoints returned from data query'
       }
     } else {
-      for (let series of this.seriesList) {
+      for (const series of this.seriesList) {
         if (series.isOutsideRange) {
           this.dataWarning = {
             title: 'Data points outside time range',
@@ -357,7 +369,6 @@ class GraphCtrl extends MetricsPanelCtrl {
         this.render(this.seriesList)
       }
     )
-    this.log('++++++++++++++eeeeeeee++++++++++++')
   }
 
   onRender() {
@@ -365,7 +376,7 @@ class GraphCtrl extends MetricsPanelCtrl {
       return
     }
 
-    for (let series of this.seriesList) {
+    for (const series of this.seriesList) {
       series.applySeriesOverrides(this.panel.seriesOverrides)
 
       if (series.unit) {
@@ -374,65 +385,30 @@ class GraphCtrl extends MetricsPanelCtrl {
     }
   }
 
-  changeSeriesColor(series, color) {
-    series.color = color
+  onColorChange = (series, color) => {
+    series.setColor(color)
     this.panel.aliasColors[series.alias] = series.color
     this.render()
   }
 
-  toggleSeries(serie, event) {
-    if (event.ctrlKey || event.metaKey || event.shiftKey) {
-      if (this.hiddenSeries[serie.alias]) {
-        delete this.hiddenSeries[serie.alias]
-      } else {
-        this.hiddenSeries[serie.alias] = true
-      }
-    } else {
-      this.toggleSeriesExclusiveMode(serie)
-    }
+  onToggleSeries = hiddenSeries => {
+    this.hiddenSeries = hiddenSeries
     this.render()
   }
 
-  toggleSeriesExclusiveMode(serie) {
-    var hidden = this.hiddenSeries
-
-    if (hidden[serie.alias]) {
-      delete hidden[serie.alias]
-    }
-
-    // check if every other series is hidden
-    var alreadyExclusive = _.every(this.seriesList, value => {
-      if (value.alias === serie.alias) {
-        return true
-      }
-
-      return hidden[value.alias]
-    })
-
-    if (alreadyExclusive) {
-      // remove all hidden series
-      _.each(this.seriesList, value => {
-        delete this.hiddenSeries[value.alias]
-      })
-    } else {
-      // hide all but this serie
-      _.each(this.seriesList, value => {
-        if (value.alias === serie.alias) {
-          return
-        }
-
-        this.hiddenSeries[value.alias] = true
-      })
-    }
+  onToggleSort = (sortBy, sortDesc) => {
+    this.panel.legend.sort = sortBy
+    this.panel.legend.sortDesc = sortDesc
+    this.render()
   }
 
-  toggleAxis(info) {
-    var override = _.find(this.panel.seriesOverrides, { alias: info.alias })
+  onToggleAxis = info => {
+    let override = _.find(this.panel.seriesOverrides, { alias: info.alias })
     if (!override) {
       override = { alias: info.alias }
       this.panel.seriesOverrides.push(override)
     }
-    info.yaxis = override.yaxis = info.yaxis === 2 ? 1 : 2
+    override.yaxis = info.yaxis
     this.render()
   }
 
@@ -451,14 +427,14 @@ class GraphCtrl extends MetricsPanelCtrl {
   }
 
   legendValuesOptionChanged() {
-    var legend = this.panel.legend
+    const legend = this.panel.legend
     legend.values =
       legend.min || legend.max || legend.avg || legend.current || legend.total
     this.render()
   }
 
   exportCsv() {
-    var scope = this.$scope.$new(true)
+    const scope = this.$scope.$new(true)
     scope.seriesList = this.seriesList
     this.publishAppEvent('show-modal', {
       templateHtml: '<export-data-modal data="seriesList"></export-data-modal>',
@@ -466,7 +442,6 @@ class GraphCtrl extends MetricsPanelCtrl {
       modalClass: 'modal--narrow'
     })
   }
-
   addTimeShifts() {
     let id = this.getTimeShiftId()
     this.log('addTimeShifts++++++++++id:' + id)
@@ -503,7 +478,7 @@ class GraphCtrl extends MetricsPanelCtrl {
     return this._panelPath
   }
   log(msg) {
-    if (this.openLog) {
+    if (false) {
       console.log(msg)
     }
   }

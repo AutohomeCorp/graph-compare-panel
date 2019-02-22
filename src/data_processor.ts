@@ -1,24 +1,23 @@
-
-import _ from 'lodash';
-import TimeSeries from './vendor/grafana/time_series2';
-import colors from './vendor/grafana/colors';
+import _ from 'lodash'
+import TimeSeries from './vendor/grafana/time_series2'
+import colors from './vendor/grafana/colors'
 
 export class DataProcessor {
   constructor(private panel) {}
 
   getSeriesList(options) {
     if (!options.dataList || options.dataList.length === 0) {
-      return [];
+      return []
     }
 
     // auto detect xaxis mode
-    var firstItem;
+    let firstItem
     if (options.dataList && options.dataList.length > 0) {
-      firstItem = options.dataList[0];
-      let autoDetectMode = this.getAutoDetectXAxisMode(firstItem);
+      firstItem = options.dataList[0]
+      const autoDetectMode = this.getAutoDetectXAxisMode(firstItem)
       if (this.panel.xaxis.mode !== autoDetectMode) {
-        this.panel.xaxis.mode = autoDetectMode;
-        this.setPanelDefaultsForNewXAxisMode();
+        this.panel.xaxis.mode = autoDetectMode
+        this.setPanelDefaultsForNewXAxisMode()
       }
     }
 
@@ -26,22 +25,30 @@ export class DataProcessor {
       case 'series':
       case 'time': {
         return options.dataList.map((item, index) => {
-          return this.timeSeriesHandler(item, index, options);
-        });
+          return this.timeSeriesHandler(item, index, options)
+        })
       }
       case 'histogram': {
-        let histogramDataList = [
-          {
-            target: 'count',
-            datapoints: _.concat([], _.flatten(_.map(options.dataList, 'datapoints'))),
-          },
-        ];
+        let histogramDataList
+        if (this.panel.stack) {
+          histogramDataList = options.dataList
+        } else {
+          histogramDataList = [
+            {
+              target: 'count',
+              datapoints: _.concat(
+                [],
+                _.flatten(_.map(options.dataList, 'datapoints'))
+              )
+            }
+          ]
+        }
         return histogramDataList.map((item, index) => {
-          return this.timeSeriesHandler(item, index, options);
-        });
+          return this.timeSeriesHandler(item, index, options)
+        })
       }
       case 'field': {
-        return this.customHandler(firstItem);
+        return this.customHandler(firstItem)
       }
     }
   }
@@ -49,17 +56,17 @@ export class DataProcessor {
   getAutoDetectXAxisMode(firstItem) {
     switch (firstItem.type) {
       case 'docs':
-        return 'field';
+        return 'field'
       case 'table':
-        return 'field';
+        return 'field'
       default: {
         if (this.panel.xaxis.mode === 'series') {
-          return 'series';
+          return 'series'
         }
         if (this.panel.xaxis.mode === 'histogram') {
-          return 'histogram';
+          return 'histogram'
         }
-        return 'time';
+        return 'time'
       }
     }
   }
@@ -67,121 +74,124 @@ export class DataProcessor {
   setPanelDefaultsForNewXAxisMode() {
     switch (this.panel.xaxis.mode) {
       case 'time': {
-        this.panel.bars = false;
-        this.panel.lines = true;
-        this.panel.points = false;
-        this.panel.legend.show = true;
-        this.panel.tooltip.shared = true;
-        this.panel.xaxis.values = [];
-        break;
+        this.panel.bars = false
+        this.panel.lines = true
+        this.panel.points = false
+        this.panel.legend.show = true
+        this.panel.tooltip.shared = true
+        this.panel.xaxis.values = []
+        break
       }
       case 'series': {
-        this.panel.bars = true;
-        this.panel.lines = false;
-        this.panel.points = false;
-        this.panel.stack = false;
-        this.panel.legend.show = false;
-        this.panel.tooltip.shared = false;
-        this.panel.xaxis.values = ['total'];
-        break;
+        this.panel.bars = true
+        this.panel.lines = false
+        this.panel.points = false
+        this.panel.stack = false
+        this.panel.legend.show = false
+        this.panel.tooltip.shared = false
+        this.panel.xaxis.values = ['total']
+        break
       }
       case 'histogram': {
-        this.panel.bars = true;
-        this.panel.lines = false;
-        this.panel.points = false;
-        this.panel.stack = false;
-        this.panel.legend.show = false;
-        this.panel.tooltip.shared = false;
-        break;
+        this.panel.bars = true
+        this.panel.lines = false
+        this.panel.points = false
+        this.panel.stack = false
+        this.panel.legend.show = false
+        this.panel.tooltip.shared = false
+        break
       }
     }
   }
 
   timeSeriesHandler(seriesData, index, options) {
-    var datapoints = seriesData.datapoints || [];
-    var alias = seriesData.target;
+    const datapoints = seriesData.datapoints || []
+    const alias = seriesData.target
 
-    var colorIndex = index % colors.length;
-    var color = this.panel.aliasColors[alias] || colors[colorIndex];
+    const colorIndex = index % colors.length
+    const color = this.panel.aliasColors[alias] || colors[colorIndex]
 
-    var series = new TimeSeries({
+    const series = new TimeSeries({
       datapoints: datapoints,
       alias: alias,
       color: color,
-      unit: seriesData.unit,
-    });
+      unit: seriesData.unit
+    })
 
     if (datapoints && datapoints.length > 0) {
-      var last = datapoints[datapoints.length - 1][1];
-      var from = options.range.from;
+      const last = datapoints[datapoints.length - 1][1]
+      const from = options.range.from
       if (last - from < -10000) {
-        series.isOutsideRange = true;
+        series.isOutsideRange = true
       }
     }
 
-    return series;
+    return series
   }
 
   customHandler(dataItem) {
-    let nameField = this.panel.xaxis.name;
+    const nameField = this.panel.xaxis.name
     if (!nameField) {
       throw {
-        message: 'No field name specified to use for x-axis, check your axes settings',
-      };
+        message:
+          'No field name specified to use for x-axis, check your axes settings'
+      }
     }
-    return [];
+    return []
   }
 
   validateXAxisSeriesValue() {
     switch (this.panel.xaxis.mode) {
       case 'series': {
         if (this.panel.xaxis.values.length === 0) {
-          this.panel.xaxis.values = ['total'];
-          return;
+          this.panel.xaxis.values = ['total']
+          return
         }
 
-        var validOptions = this.getXAxisValueOptions({});
-        var found = _.find(validOptions, { value: this.panel.xaxis.values[0] });
+        const validOptions = this.getXAxisValueOptions({})
+        const found = _.find(validOptions, {
+          value: this.panel.xaxis.values[0]
+        })
         if (!found) {
-          this.panel.xaxis.values = ['total'];
+          this.panel.xaxis.values = ['total']
         }
-        return;
+        return
       }
     }
   }
 
   getDataFieldNames(dataList, onlyNumbers) {
     if (dataList.length === 0) {
-      return [];
+      return []
     }
 
-    let fields = [];
-    var firstItem = dataList[0];
-    let fieldParts = [];
+    const fields = []
+    const firstItem = dataList[0]
+    const fieldParts = []
 
     function getPropertiesRecursive(obj) {
       _.forEach(obj, (value, key) => {
         if (_.isObject(value)) {
-          fieldParts.push(key);
-          getPropertiesRecursive(value);
+          fieldParts.push(key)
+          getPropertiesRecursive(value)
         } else {
           if (!onlyNumbers || _.isNumber(value)) {
-            let field = fieldParts.concat(key).join('.');
-            fields.push(field);
+            const field = fieldParts.concat(key).join('.')
+            fields.push(field)
           }
         }
-      });
-      fieldParts.pop();
+      })
+      fieldParts.pop()
     }
 
     if (firstItem.type === 'docs') {
       if (firstItem.datapoints.length === 0) {
-        return [];
+        return []
       }
-      getPropertiesRecursive(firstItem.datapoints[0]);
+      getPropertiesRecursive(firstItem.datapoints[0])
     }
 
-    return fields;
+    return fields
   }
 
   getXAxisValueOptions(options) {
@@ -192,24 +202,24 @@ export class DataProcessor {
           { text: 'Min', value: 'min' },
           { text: 'Max', value: 'max' },
           { text: 'Total', value: 'total' },
-          { text: 'Count', value: 'count' },
-        ];
+          { text: 'Count', value: 'count' }
+        ]
       }
     }
 
-    return [];
+    return []
   }
 
   pluckDeep(obj: any, property: string) {
-    let propertyParts = property.split('.');
-    let value = obj;
+    const propertyParts = property.split('.')
+    let value = obj
     for (let i = 0; i < propertyParts.length; ++i) {
       if (value[propertyParts[i]]) {
-        value = value[propertyParts[i]];
+        value = value[propertyParts[i]]
       } else {
-        return undefined;
+        return undefined
       }
     }
-    return value;
+    return value
   }
 }

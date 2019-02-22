@@ -3,10 +3,8 @@
     "moduleResolution": "node",
     "outDir": "dist",
     "target": "es5",
-    "lib": [
-      "es6",
-      "dom"
-    ],
+    "jsx": "react",
+    "lib": ["es6", "dom"],
     "rootDir": "./src",
     "module": "esnext",
     "declaration": false,
@@ -22,8 +20,11 @@
     "noImplicitAny": false,
     "noUnusedLocals": true,
     "baseUrl": "public"
+    /* "baseUrl": "./",
+    "paths": {
+      "*": ["*", "./types/*"]
+    },
+    "typeRoots": ["./node_modules/@types", "./types"]**/
   },
-  "include": [
-    "./src/**/*.ts"
-  ]
+  "include": ["./src/**/*.ts", "./src/**/*.tsx", "./src/**/*.js"]
 }
