@@ -3353,7 +3353,6 @@ var GraphCtrl = /** @class */ (function (_super) {
         //this.log('final:' + JSON.stringify(this.dataList))
         this.log('final');
         dataList = this.dataList;
-        this.dataList = dataList;
         this.seriesList = this.processor.getSeriesList({
             dataList: dataList,
             range: this.range
@@ -3469,7 +3468,7 @@ var GraphCtrl = /** @class */ (function (_super) {
         configurable: true
     });
     GraphCtrl.prototype.log = function (msg) {
-        if (true) {
+        if (false) {
             console.log(msg);
         }
     };
