@@ -199,30 +199,17 @@ class GraphCtrl extends MetricsPanelCtrl {
   }
 
   emitTimeShiftRefresh() {
-    if (this.panel.timeShifts.length < this.timeShifts_sort) {
-      return
-    }
     let timeShift = this.panel.timeShifts[this.timeShifts_sort - 1]
-    if (
-      typeof timeShift !== 'undefined' &&
-      typeof timeShift.value !== 'undefined' &&
-      timeShift.value != null &&
-      timeShift.value != ''
-    ) {
-      this.log(
-        'emitRefresh+++++++++++timeShift:' +
-          JSON.stringify(timeShift) +
-          '++timeShifts_sort:' +
-          this.timeShifts_sort +
-          '++++++++timeShift.value:' +
-          timeShift.value
-      )
-      this.panel.timeShift = timeShift.value
-    } else {
-      this.timeShifts_sort++
-      this.emitTimeShiftRefresh()
-      return
-    }
+    this.log(
+      'emitRefresh+++++++++++timeShift:' +
+        JSON.stringify(timeShift) +
+        '++timeShifts_sort:' +
+        this.timeShifts_sort +
+        '++++++++timeShift.value:' +
+        timeShift.value
+    )
+    this.panel.timeShift = timeShift.value
+
     this.events.emit('refresh')
   }
   gennerDataListTimeShift(dataList, timeShift) {

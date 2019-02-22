@@ -1,6 +1,6 @@
-
 # Graph Compare Panel
-_______________________________________
+
+---
 
 [中文文档](README_zh.md)
 
@@ -10,8 +10,9 @@ This plugin is built as a panel plugin that combines and contrasts different tim
 
 Time shift supports the following units: s (seconds), m (minutes), h (hours), d (days), w (weeks), M (months), y (years)
 
-Works only on Grafana versions >= V5.0.1
+Branch 'master' Works only on Grafana versions V5.0.1 - V5.3.4
 
+Branch 'graph-compare-panel-for-grafana-5.4.x' Works only on Grafana versions V5.4.x
 
 # Screenshots
 
@@ -19,23 +20,22 @@ Works only on Grafana versions >= V5.0.1
 
 ![Screenshot2](/dist/screenshots/image-2.png)
 
-
 # Installation
 
 Clone this project into the grafana plugins directory (if you install grafana with the package, the default is /var / lib / grafana / plugins). Restart grafana and the panel plugin should be detected and automatically used.
 
 # Usage
 
-* Create a dashboard and select the Graph Compare Panel plugin.
-* Create a basic query
-* Add time shift on the compareTime tab page
-
+- Create a dashboard and select the Graph Compare Panel plugin.
+- Create a basic query
+- Add time shift on the compareTime tab page
 
 # Credits
 
 Based on
-* [grafana](https://github.com/grafana/grafana)
-* [grafana-graph-panel](https://github.com/CorpGlory/grafana-graph-panel)
-* [@types/grafana](https://github.com/CorpGlory/types-grafana)
+
+- [grafana](https://github.com/grafana/grafana)
+- [grafana-graph-panel](https://github.com/CorpGlory/grafana-graph-panel)
+- [@types/grafana](https://github.com/CorpGlory/types-grafana)
 
 Made by [AutoHome Team](https://github.com/AutohomeCorp)
