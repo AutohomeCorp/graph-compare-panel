@@ -2072,7 +2072,7 @@ var GraphCtrl = /** @class */ (function (_super) {
             panel: this.panel,
             range: this.range
         });
-        this.onDataReceived(snapshotData);
+        this.dataReceived(snapshotData);
     };
     GraphCtrl.prototype.onDataError = function (err) {
         this.timeShifts_sort = 0;
@@ -2081,27 +2081,14 @@ var GraphCtrl = /** @class */ (function (_super) {
         this.render([]);
     };
     GraphCtrl.prototype.emitTimeShiftRefresh = function () {
-        if (this.panel.timeShifts.length < this.timeShifts_sort) {
-            return;
-        }
         var timeShift = this.panel.timeShifts[this.timeShifts_sort - 1];
-        if (typeof timeShift !== 'undefined' &&
-            typeof timeShift.value !== 'undefined' &&
-            timeShift.value != null &&
-            timeShift.value != '') {
-            this.log('emitRefresh+++++++++++timeShift:' +
-                JSON.stringify(timeShift) +
-                '++timeShifts_sort:' +
-                this.timeShifts_sort +
-                '++++++++timeShift.value:' +
-                timeShift.value);
-            this.panel.timeShift = timeShift.value;
-        }
-        else {
-            this.timeShifts_sort++;
-            this.emitTimeShiftRefresh();
-            return;
-        }
+        this.log('emitRefresh+++++++++++timeShift:' +
+            JSON.stringify(timeShift) +
+            '++timeShifts_sort:' +
+            this.timeShifts_sort +
+            '++++++++timeShift.value:' +
+            timeShift.value);
+        this.panel.timeShift = timeShift.value;
         this.events.emit('refresh');
     };
     GraphCtrl.prototype.gennerDataListTimeShift = function (dataList, timeShift) {
@@ -2162,11 +2149,16 @@ var GraphCtrl = /** @class */ (function (_super) {
         }
     };
     GraphCtrl.prototype.onDataReceived = function (dataList) {
-        var _this = this;
         this.log('this.timeShifts_sort :' +
             this.timeShifts_sort +
             ',this.panel.timeShifts.length:' +
             this.panel.timeShifts.length);
+        this.log('this.panel.snapshotData:' + JSON.stringify(this.panel.snapshotData));
+        if (this.dashboard.snapshot) {
+            this.snapshot_tmp = this.dashboard.snapshot;
+            this.dashboard.snapshot = undefined;
+            this.panel.snapshotData = undefined;
+        }
         if (this.timeShifts_sort == 0 ||
             typeof this.timeShifts_sort == 'undefined') {
             this.timeShifts_sort = 0;
@@ -2183,12 +2175,26 @@ var GraphCtrl = /** @class */ (function (_super) {
             this.emitTimeShiftRefresh();
             return;
         }
+        this.revert();
+        this.log('final:' + JSON.stringify(this.dataList));
+        dataList = this.dataList;
+        this.dataReceived(dataList);
+        var _a;
+    };
+    GraphCtrl.prototype.revert = function () {
         this.range = this.range_bak;
         this.timeInfo = this.timeInfo_bak;
         this.panel.timeShift = '';
         this.timeShifts_sort = 0;
-        this.log('final:' + JSON.stringify(this.dataList));
-        dataList = this.dataList;
+    };
+    GraphCtrl.prototype.dataReceived = function (dataList) {
+        var _this = this;
+        this.log('this.snapshot_tmp:' + JSON.stringify(this.snapshot_tmp));
+        if (this.snapshot_tmp) {
+            this.panel.snapshotData = dataList;
+            this.dashboard.snapshot = this.snapshot_tmp;
+            this.snapshot_tmp = undefined;
+        }
         this.seriesList = this.processor.getSeriesList({
             dataList: dataList,
             range: this.range
@@ -2204,8 +2210,8 @@ var GraphCtrl = /** @class */ (function (_super) {
             };
         }
         else {
-            for (var _i = 0, _b = this.seriesList; _i < _b.length; _i++) {
-                var series = _b[_i];
+            for (var _i = 0, _a = this.seriesList; _i < _a.length; _i++) {
+                var series = _a[_i];
                 if (series.isOutsideRange) {
                     this.dataWarning = {
                         title: 'Data points outside time range',
@@ -2225,7 +2231,6 @@ var GraphCtrl = /** @class */ (function (_super) {
             _this.render(_this.seriesList);
         });
         this.log('++++++++++++++eeeeeeee++++++++++++');
-        var _a;
     };
     GraphCtrl.prototype.onRender = function () {
         if (!this.seriesList) {
@@ -2363,7 +2368,7 @@ var GraphCtrl = /** @class */ (function (_super) {
         configurable: true
     });
     GraphCtrl.prototype.log = function (msg) {
-        if (this.openLog) {
+        if (true) {
             console.log(msg);
         }
     };
@@ -8429,7 +8434,7 @@ var SeriesOverridesCtrl = /** @class */ (function () {
                 values: values,
                 submenu: __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.map(values, function (value) {
                     return { text: String(value), value: value };
-                }),
+                })
             };
             $scope.overrideMenu.push(option);
         };
@@ -8464,11 +8469,11 @@ var SeriesOverridesCtrl = /** @class */ (function () {
                 model: {
                     autoClose: true,
                     colorSelected: $scope.colorSelected,
-                    series: fakeSeries,
+                    series: fakeSeries
                 },
                 onClose: function () {
                     $scope.ctrl.render();
-                },
+                }
             });
         };
         $scope.removeOverride = function (option) {
@@ -8491,15 +8496,43 @@ var SeriesOverridesCtrl = /** @class */ (function () {
                 $scope.currentOverrides.push({
                     name: option.text,
                     propertyName: option.propertyName,
-                    value: String(value),
+                    value: String(value)
                 });
             });
         };
         $scope.addOverrideOption('Bars', 'bars', [true, false]);
         $scope.addOverrideOption('Lines', 'lines', [true, false]);
-        $scope.addOverrideOption('Line fill', 'fill', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-        $scope.addOverrideOption('Line width', 'linewidth', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-        $scope.addOverrideOption('Null point mode', 'nullPointMode', ['connected', 'null', 'null as zero']);
+        $scope.addOverrideOption('Line fill', 'fill', [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+        ]);
+        $scope.addOverrideOption('Line width', 'linewidth', [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+        ]);
+        $scope.addOverrideOption('Null point mode', 'nullPointMode', [
+            'connected',
+            'null',
+            'null as zero'
+        ]);
         $scope.addOverrideOption('Fill below to', 'fillBelowTo', $scope.getSeriesNames());
         $scope.addOverrideOption('Staircase line', 'steppedLine', [true, false]);
         $scope.addOverrideOption('Dashes', 'dashes', [true, false]);
@@ -8523,7 +8556,7 @@ var SeriesOverridesCtrl = /** @class */ (function () {
             17,
             18,
             19,
-            20,
+            20
         ]);
         $scope.addOverrideOption('Dash Space', 'spaceLength', [
             1,
@@ -8545,11 +8578,18 @@ var SeriesOverridesCtrl = /** @class */ (function () {
             17,
             18,
             19,
-            20,
+            20
         ]);
         $scope.addOverrideOption('Points', 'points', [true, false]);
         $scope.addOverrideOption('Points Radius', 'pointradius', [1, 2, 3, 4, 5]);
-        $scope.addOverrideOption('Stack', 'stack', [true, false, 'A', 'B', 'C', 'D']);
+        $scope.addOverrideOption('Stack', 'stack', [
+            true,
+            false,
+            'A',
+            'B',
+            'C',
+            'D'
+        ]);
         $scope.addOverrideOption('Color', 'color', ['change']);
         $scope.addOverrideOption('Y-axis', 'yaxis', [1, 2]);
         $scope.addOverrideOption('Z-index', 'zindex', [-3, -2, -1, 0, 1, 2, 3]);
@@ -8560,7 +8600,9 @@ var SeriesOverridesCtrl = /** @class */ (function () {
     return SeriesOverridesCtrl;
 }());
 
-__WEBPACK_IMPORTED_MODULE_1_angular___default.a.module('grafana.controllers').controller('SeriesOverridesCtrl', SeriesOverridesCtrl);
+__WEBPACK_IMPORTED_MODULE_1_angular___default.a
+    .module('grafana.controllers')
+    .controller('SeriesOverridesCtrl', SeriesOverridesCtrl);
 
 
 /***/ }),

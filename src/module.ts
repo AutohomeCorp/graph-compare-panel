@@ -32,6 +32,7 @@ class GraphCtrl extends MetricsPanelCtrl {
   timeInfo_bak: any
   queryTimeShifts: any = []
   openLog: false
+  snapshot_tmp: any
   panelDefaults = {
     // datasource name, null = default datasource
     datasource: null,
@@ -127,7 +128,6 @@ class GraphCtrl extends MetricsPanelCtrl {
     _.defaults(this.panel.xaxis, this.panelDefaults.xaxis)
 
     this.processor = new DataProcessor(this.panel)
-
     this.events.on('render', this.onRender.bind(this))
     this.events.on('data-received', this.onDataReceived.bind(this))
     this.events.on('data-error', this.onDataError.bind(this))
@@ -135,7 +135,6 @@ class GraphCtrl extends MetricsPanelCtrl {
     this.events.on('init-edit-mode', this.onInitEditMode.bind(this))
     this.events.on('init-panel-actions', this.onInitPanelActions.bind(this))
   }
-
   onInitEditMode() {
     var partialPath = this.panelPath + 'partials'
     this.addEditorTab('Axes', axesEditorComponent, 2)
@@ -188,7 +187,7 @@ class GraphCtrl extends MetricsPanelCtrl {
       panel: this.panel,
       range: this.range
     })
-    this.onDataReceived(snapshotData)
+    this.dataReceived(snapshotData)
   }
 
   onDataError(err) {
@@ -289,6 +288,15 @@ class GraphCtrl extends MetricsPanelCtrl {
         ',this.panel.timeShifts.length:' +
         this.panel.timeShifts.length
     )
+    this.log(
+      'this.panel.snapshotData:' + JSON.stringify(this.panel.snapshotData)
+    )
+    if (this.dashboard.snapshot) {
+      this.snapshot_tmp = this.dashboard.snapshot
+      this.dashboard.snapshot = undefined
+      this.panel.snapshotData = undefined
+    }
+
     if (
       this.timeShifts_sort == 0 ||
       typeof this.timeShifts_sort == 'undefined'
@@ -310,13 +318,24 @@ class GraphCtrl extends MetricsPanelCtrl {
       this.emitTimeShiftRefresh()
       return
     }
+    this.revert()
+    this.log('final:' + JSON.stringify(this.dataList))
+    dataList = this.dataList
+    this.dataReceived(dataList)
+  }
+  revert() {
     this.range = this.range_bak
     this.timeInfo = this.timeInfo_bak
     this.panel.timeShift = ''
     this.timeShifts_sort = 0
-
-    this.log('final:' + JSON.stringify(this.dataList))
-    dataList = this.dataList
+  }
+  dataReceived(dataList) {
+    this.log('this.snapshot_tmp:' + JSON.stringify(this.snapshot_tmp))
+    if (this.snapshot_tmp) {
+      this.panel.snapshotData = dataList
+      this.dashboard.snapshot = this.snapshot_tmp
+      this.snapshot_tmp = undefined
+    }
     this.seriesList = this.processor.getSeriesList({
       dataList: dataList,
       range: this.range
@@ -359,7 +378,6 @@ class GraphCtrl extends MetricsPanelCtrl {
     )
     this.log('++++++++++++++eeeeeeee++++++++++++')
   }
-
   onRender() {
     if (!this.seriesList) {
       return
