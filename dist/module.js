@@ -3247,7 +3247,7 @@ var GraphCtrl = /** @class */ (function (_super) {
             panel: this.panel,
             range: this.range
         });
-        this.onDataReceived(snapshotData);
+        this.dataReceived(snapshotData);
     };
     GraphCtrl.prototype.onDataError = function (err) {
         this.timeShifts_sort = 0;
@@ -3324,12 +3324,17 @@ var GraphCtrl = /** @class */ (function (_super) {
         }
     };
     GraphCtrl.prototype.onDataReceived = function (dataList) {
-        var _this = this;
         var _a;
         this.log('this.timeShifts_sort :' +
             this.timeShifts_sort +
             ',this.panel.timeShifts.length:' +
             this.panel.timeShifts.length);
+        this.log('this.panel.snapshotData:' + JSON.stringify(this.panel.snapshotData));
+        if (this.dashboard.snapshot) {
+            this.snapshot_tmp = this.dashboard.snapshot;
+            this.dashboard.snapshot = undefined;
+            this.panel.snapshotData = undefined;
+        }
         if (this.timeShifts_sort == 0 ||
             typeof this.timeShifts_sort == 'undefined') {
             this.timeShifts_sort = 0;
@@ -3346,13 +3351,25 @@ var GraphCtrl = /** @class */ (function (_super) {
             this.emitTimeShiftRefresh();
             return;
         }
+        this.revert();
+        //this.log('final:' + JSON.stringify(this.dataList))
+        this.log('final');
+        this.dataReceived(this.dataList);
+    };
+    GraphCtrl.prototype.revert = function () {
         this.range = this.range_bak;
         this.timeInfo = this.timeInfo_bak;
         this.panel.timeShift = '';
         this.timeShifts_sort = 0;
-        //this.log('final:' + JSON.stringify(this.dataList))
-        this.log('final');
-        dataList = this.dataList;
+    };
+    GraphCtrl.prototype.dataReceived = function (dataList) {
+        var _this = this;
+        this.log('this.snapshot_tmp:' + JSON.stringify(this.snapshot_tmp));
+        if (this.snapshot_tmp) {
+            this.panel.snapshotData = dataList;
+            this.dashboard.snapshot = this.snapshot_tmp;
+            this.snapshot_tmp = undefined;
+        }
         this.seriesList = this.processor.getSeriesList({
             dataList: dataList,
             range: this.range
@@ -3368,8 +3385,8 @@ var GraphCtrl = /** @class */ (function (_super) {
             };
         }
         else {
-            for (var _i = 0, _b = this.seriesList; _i < _b.length; _i++) {
-                var series = _b[_i];
+            for (var _i = 0, _a = this.seriesList; _i < _a.length; _i++) {
+                var series = _a[_i];
                 if (series.isOutsideRange) {
                     this.dataWarning = {
                         title: 'Data points outside time range',
@@ -3468,7 +3485,7 @@ var GraphCtrl = /** @class */ (function (_super) {
         configurable: true
     });
     GraphCtrl.prototype.log = function (msg) {
-        if (false) {
+        if (true) {
             console.log(msg);
         }
     };
