@@ -35,5 +35,6 @@ graph-compare-panel-for-grafana-5.4.x 分支版本适用于 Grafana 版本 V5.4.
 - [grafana](https://github.com/grafana/grafana)
 - [grafana-graph-panel](https://github.com/CorpGlory/grafana-graph-panel)
 - [@types/grafana](https://github.com/CorpGlory/types-grafana)
+- [grafana-multibar-graph-panel](https://github.com/CorpGlory/grafana-multibar-graph-panel)
 
 Made by [AutoHome Team](https://github.com/AutohomeCorp)
