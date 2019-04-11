@@ -1,5 +1,7 @@
-import './graph'
-import './legend'
+//import './graph'
+//import './legend'
+import { GraphRenderer } from './graph_renderer'
+import { GraphLegend } from './graph_legend'
 import './series_overrides_ctrl'
 import './thresholds_form'
 
@@ -10,7 +12,7 @@ import { MetricsPanelCtrl, alertTab } from 'grafana/app/plugins/sdk'
 import { DataProcessor } from './data_processor'
 import { axesEditorComponent } from './axes_editor'
 import * as timeShiftUtil from './time_shift_util'
-
+import $ from 'jquery'
 class GraphCtrl extends MetricsPanelCtrl {
   static template = template
 
@@ -33,6 +35,8 @@ class GraphCtrl extends MetricsPanelCtrl {
   queryTimeShifts: any = []
   openLog: false
   snapshot_tmp: any
+  private _graphRenderer: GraphRenderer
+  private _graphLegend: GraphLegend
   panelDefaults = {
     // datasource name, null = default datasource
     datasource: null,
@@ -61,7 +65,9 @@ class GraphCtrl extends MetricsPanelCtrl {
       mode: 'time',
       name: null,
       values: [],
-      buckets: null
+      buckets: null,
+      customDateFormatShow: false,
+      customDateFormat: ''
     },
     // show/hide lines
     lines: true,
@@ -115,11 +121,19 @@ class GraphCtrl extends MetricsPanelCtrl {
     // other style overrides
     seriesOverrides: [],
     thresholds: [],
-    timeShifts: []
+    timeShifts: [],
+    displayBarsSideBySide: false,
+    labelAlign: 'left'
   }
 
   /** @ngInject */
-  constructor($scope, $injector, private annotationsSrv) {
+  constructor(
+    $scope,
+    $injector,
+    private annotationsSrv,
+    private popoverSrv,
+    private contextSrv
+  ) {
     super($scope, $injector)
 
     _.defaults(this.panel, this.panelDefaults)
@@ -134,6 +148,21 @@ class GraphCtrl extends MetricsPanelCtrl {
     this.events.on('data-snapshot-load', this.onDataSnapshotLoad.bind(this))
     this.events.on('init-edit-mode', this.onInitEditMode.bind(this))
     this.events.on('init-panel-actions', this.onInitPanelActions.bind(this))
+  }
+  link(scope, elem, attrs, ctrl) {
+    var $graphElem = $(elem[0]).find('#grafana-compare-graph')
+    var $legendElem = $(elem[0]).find('#graph-compare-legend')
+    this._graphRenderer = new GraphRenderer(
+      $graphElem,
+      this.timeSrv,
+      this.contextSrv,
+      this.$scope
+    )
+    this._graphLegend = new GraphLegend(
+      $legendElem,
+      this.popoverSrv,
+      this.$scope
+    )
   }
   onInitEditMode() {
     var partialPath = this.panelPath + 'partials'
@@ -378,7 +407,7 @@ class GraphCtrl extends MetricsPanelCtrl {
     )
     this.log('++++++++++++++eeeeeeee++++++++++++')
   }
-  onRender() {
+  onRender(data) {
     if (!this.seriesList) {
       return
     }
@@ -390,6 +419,10 @@ class GraphCtrl extends MetricsPanelCtrl {
         this.panel.yaxes[series.yaxis - 1].format = series.unit
       }
     }
+    this._graphRenderer.render(data)
+    this._graphLegend.render()
+
+    this._graphRenderer.renderPanel()
   }
 
   changeSeriesColor(series, color) {

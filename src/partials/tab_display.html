@@ -26,6 +26,8 @@
 		</div>
 		<div class="section gf-form-group">
 			<h5 class="section-heading">Mode Options</h5>
+			<gf-form-switch ng-show="ctrl.panel.bars" class="gf-form" label="Side By Side" label-class="width-8" checked="ctrl.panel.displayBarsSideBySide" on-change="ctrl.render()">
+      </gf-form-switch>
 			<div class="gf-form" ng-show="ctrl.panel.lines">
 				<label class="gf-form-label width-8">Fill</label>
 				<div class="gf-form-select-wrapper max-width-5">
@@ -82,6 +84,16 @@
 				</div>
 			</div>
 		</div>
+		<div class="section gf-form-group">
+			<h5 class="section-heading">Labels</h5>
+			<div class="gf-form">
+				<label class="gf-form-label width-7">Align</label>
+				<div class="gf-form-select-wrapper">
+					<select class="gf-form-input max-width-9" ng-model="ctrl.panel.labelAlign" ng-options="f for f in ['left', 'center', 'right']" ng-change="ctrl.render()"></select>
+				</div>
+			</div>
+		</div>
+	</div>
 	</div>
 
 	<div class="edit-tab-content" ng-if="ctrl.subTabIndex === 1">

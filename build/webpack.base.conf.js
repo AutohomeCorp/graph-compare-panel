@@ -1,6 +1,6 @@
-const path = require('path');
-const webpack = require('webpack');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
+const path = require('path')
+const webpack = require('webpack')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
 
 function resolve(dir) {
   return path.join(__dirname, '..', dir)
@@ -11,19 +11,22 @@ module.exports = {
   context: resolve('src'),
   entry: './module.ts',
   output: {
-    filename: "module.js",
+    filename: 'module.js',
     path: resolve('dist'),
-    libraryTarget: "amd"
+    libraryTarget: 'amd'
   },
   externals: [
     // remove the line below if you don't want to use buildin versions
-    'jquery', 'lodash', 'moment', 'angular',
+    'jquery',
+    'lodash',
+    'moment',
+    'angular',
     function(context, request, callback) {
-      var prefix = 'grafana/';
+      var prefix = 'grafana/'
       if (request.indexOf(prefix) === 0) {
-        return callback(null, request.substr(prefix.length));
+        return callback(null, request.substr(prefix.length))
       }
-      callback();
+      callback()
     }
   ],
   plugins: [
@@ -35,16 +38,20 @@ module.exports = {
     ])
   ],
   resolve: {
-    extensions: [".ts", ".js"]
+    extensions: ['.ts', '.js']
   },
   module: {
     rules: [
       {
-        test: /\.tsx?$/, 
+        test: /\.tsx?$/,
+        loaders: ['ts-loader'],
+        exclude: /node_modules/
+      },
+      {
+        test: /jquery\.flot/,
         loaders: [
-          "ts-loader"
-        ],
-        exclude: /node_modules/,
+          'imports-loader?jQuery=jquery,lodash=lodash,angular=angular,tetherDrop=tether-drop'
+        ]
       }
     ]
   }
