@@ -236,8 +236,7 @@ class GraphCtrl extends MetricsPanelCtrl {
         '++++++++timeShift.value:' +
         timeShift.value
     )
-    this.panel.timeShift = timeShift.value
-
+    this.panel.timeShift = this.templateSrv.replace(timeShift.value, this.panel.scopedVars)
     this.events.emit('refresh')
   }
   gennerDataListTimeShift(dataList, timeShift) {
@@ -254,9 +253,12 @@ class GraphCtrl extends MetricsPanelCtrl {
     }
     this.log('gennerDataListTimeShift+from' + JSON.stringify(this.range.from))
     //let timeShift_ms = timeShiftUtil.parseShiftToMs(timeShift.value);
+    let timeShiftValue = this.templateSrv.replace(timeShift.value, this.panel.scopedVars)
+    let timeShiftAlias = this.templateSrv.replace(timeShift.alias, this.panel.scopedVars)
+
     let timeShift_ms = timeShiftUtil.parseShiftToMs(
       this.range.from,
-      timeShift.value
+      timeShiftValue
     )
 
     if (typeof timeShift_ms == 'undefined') {
@@ -264,7 +266,7 @@ class GraphCtrl extends MetricsPanelCtrl {
     }
     this.log(
       'gennerDataListTimeShift: timeShift=' +
-        JSON.stringify(timeShift) +
+        JSON.stringify(timeShiftValue) +
         '======;timeShift_ms=' +
         timeShift_ms
     )
@@ -274,9 +276,9 @@ class GraphCtrl extends MetricsPanelCtrl {
         timeShift.alias == null ||
         timeShift.alias == ''
       ) {
-        line.target = line.target + '_' + timeShift.value
+        line.target = line.target + '_' + timeShiftValue
       } else {
-        line.target = line.target + '_' + timeShift.alias
+        line.target = line.target + '_' + timeShiftAlias
       }
       for (let point of line.datapoints) {
         point[1] = point[1] + timeShift_ms
@@ -554,7 +556,7 @@ class GraphCtrl extends MetricsPanelCtrl {
     return this._panelPath
   }
   log(msg) {
-    if (this.openLog) {
+    if (true) {
       console.log(msg)
     }
   }

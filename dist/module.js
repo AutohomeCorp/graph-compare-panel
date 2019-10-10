@@ -5893,7 +5893,7 @@ var GraphCtrl = /** @class */ (function (_super) {
             this.timeShifts_sort +
             '++++++++timeShift.value:' +
             timeShift.value);
-        this.panel.timeShift = timeShift.value;
+        this.panel.timeShift = this.templateSrv.replace(timeShift.value, this.panel.scopedVars);
         this.events.emit('refresh');
     };
     GraphCtrl.prototype.gennerDataListTimeShift = function (dataList, timeShift) {
@@ -5908,12 +5908,14 @@ var GraphCtrl = /** @class */ (function (_super) {
         }
         this.log('gennerDataListTimeShift+from' + JSON.stringify(this.range.from));
         //let timeShift_ms = timeShiftUtil.parseShiftToMs(timeShift.value);
-        var timeShift_ms = __WEBPACK_IMPORTED_MODULE_10__time_shift_util__["a" /* parseShiftToMs */](this.range.from, timeShift.value);
+        var timeShiftValue = this.templateSrv.replace(timeShift.value, this.panel.scopedVars);
+        var timeShiftAlias = this.templateSrv.replace(timeShift.alias, this.panel.scopedVars);
+        var timeShift_ms = __WEBPACK_IMPORTED_MODULE_10__time_shift_util__["a" /* parseShiftToMs */](this.range.from, timeShiftValue);
         if (typeof timeShift_ms == 'undefined') {
             return [];
         }
         this.log('gennerDataListTimeShift: timeShift=' +
-            JSON.stringify(timeShift) +
+            JSON.stringify(timeShiftValue) +
             '======;timeShift_ms=' +
             timeShift_ms);
         for (var _i = 0, dataList_1 = dataList; _i < dataList_1.length; _i++) {
@@ -5921,10 +5923,10 @@ var GraphCtrl = /** @class */ (function (_super) {
             if (typeof timeShift.alias == 'undefined' ||
                 timeShift.alias == null ||
                 timeShift.alias == '') {
-                line.target = line.target + '_' + timeShift.value;
+                line.target = line.target + '_' + timeShiftValue;
             }
             else {
-                line.target = line.target + '_' + timeShift.alias;
+                line.target = line.target + '_' + timeShiftAlias;
             }
             for (var _a = 0, _b = line.datapoints; _a < _b.length; _a++) {
                 var point = _b[_a];
@@ -6176,7 +6178,7 @@ var GraphCtrl = /** @class */ (function (_super) {
         configurable: true
     });
     GraphCtrl.prototype.log = function (msg) {
-        if (this.openLog) {
+        if (true) {
             console.log(msg);
         }
     };
