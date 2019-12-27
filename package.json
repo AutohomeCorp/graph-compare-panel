@@ -26,7 +26,8 @@
     "loader-utils": "^1.1.0",
     "ts-loader": "^2.3.7",
     "typescript": "^2.4.2",
-    "webpack": "^3.6.0"
+    "webpack": "^3.6.0",
+    "serialize-javascript": ">=2.1.1"
   },
   "resolutions": {
     "caniuse-db": "1.0.30000772",
