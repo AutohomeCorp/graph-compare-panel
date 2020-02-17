@@ -2,6 +2,10 @@
 
 ---
 
+注意：
+
+此插件已不再维护，我们替换为[同环比数据库插件](https://github.com/AutohomeCorp/grafana-compare-queries)
+
 [Engilsh](README.md)
 
 基于[grafana-graph-panel](https://github.com/CorpGlory/grafana-graph-panel) 实现，主要解决问题： https://github.com/grafana/grafana/issues/2093

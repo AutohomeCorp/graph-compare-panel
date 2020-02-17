@@ -2,6 +2,10 @@
 
 ---
 
+Note
+
+This plugin is no longer maintained, we switched to using [grafana-compare-queries](https://github.com/AutohomeCorp/grafana-compare-queries) instead
+
 [中文文档](README_zh.md)
 
 Webpack copy of [grafana-graph-panel](https://github.com/CorpGlory/grafana-graph-panel) implementing https://github.com/grafana/grafana/issues/2093
