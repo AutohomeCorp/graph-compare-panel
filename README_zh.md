@@ -4,7 +4,7 @@
 
 注意：
 
-此插件已不再维护，我们替换为[同环比数据库插件](https://github.com/AutohomeCorp/grafana-compare-queries)
+此插件已不再维护，我们替换为[同环比数据源插件](https://github.com/AutohomeCorp/grafana-compare-queries)
 
 [Engilsh](README.md)
 
