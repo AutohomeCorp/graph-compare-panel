@@ -2,7 +2,7 @@
 
 ---
 
-# Warning ：This plugin is no longer maintained, we switched to using [grafana-compare-queries](https://github.com/AutohomeCorp/grafana-compare-queries) instead
+# Warning ：This plugin is no longer maintained, we switched to using [grafana-compare-queries](https://github.com/AutohomeCorp/autohome-compareQueries-datasource) instead
 
 ---
 
